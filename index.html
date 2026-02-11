@@ -3,29 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Video Mapping Web Tool</title>
+    <title>Infinity Mapper Pro + Save System</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.2/p5.min.js"></script>
 </head>
 <body>
     <div id="ui-panel">
-        <h1>Mapper JS</h1>
+        <h1>Mapper Infinity Pro</h1>
+        <button id="addLayerBtn" class="primary">+ Añadir Nueva Capa</button>
+        <button id="clearAllBtn" style="background:#442222;">Limpiar Todo el Proyecto</button>
         <hr>
-        <div class="control-group">
-            <label>1. Cargar Video:</label>
-            <input type="file" id="videoInput" accept="video/*">
-        </div>
-        <div class="control-group">
-            <label>2. Opacidad:</label>
-            <input type="range" id="opacitySlider" min="0" max="255" value="255">
-        </div>
-        <div class="control-group">
-            <button id="togglePoints">Mostrar/Ocultar Puntos</button>
-            <button id="resetPoints">Resetear Geometría</button>
-            <button id="fullscreenBtn" class="primary">PANTALLA COMPLETA</button>
-        </div>
-        <div class="footer">
-            <p>Usa el mouse para arrastrar las esquinas en el lienzo derecho.</p>
+        <div id="layers-container"></div>
+        <div class="global-controls">
+            <button id="togglePoints">Ver/Ocultar Guías</button>
+            <button id="fullscreenBtn">PANTALLA COMPLETA</button>
+            <p class="info-text">Los ajustes de posición y mezcla se guardan automáticamente en este navegador.</p>
         </div>
     </div>
     <div id="canvas-container"></div>
