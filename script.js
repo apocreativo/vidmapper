@@ -20,7 +20,8 @@ function createLayer(savedData = null) {
     let id = savedData ? savedData.id : Date.now();
     let newLayer = {
         id: id,
-        video: null,
+        content: null, // Aquí irá el video o la imagen
+        contentType: 'none',
         opacity: savedData ? savedData.opacity : 255,
         blendMode: savedData ? savedData.blendMode : 'BLEND',
         corners: savedData ? savedData.corners : [
@@ -35,10 +36,10 @@ function createLayer(savedData = null) {
     card.innerHTML = `
         <div class="layer-header">
             <h3>CAPA ID: ${id.toString().slice(-4)}</h3>
-            <button class="delete-btn" onclick="removeLayer(${id})">ELIMINAR</button>
+            <button class="delete-btn" onclick="removeLayer(${id})">X</button>
         </div>
         <div class="control-item">
-            <input type="file" onchange="loadVideo(event, ${id})" accept="video/*">
+            <input type="file" onchange="handleMedia(event, ${id})" accept="video/*,image/*">
         </div>
         <div class="control-item">
             <label>Mezcla:</label>
@@ -59,17 +60,27 @@ function createLayer(savedData = null) {
     saveToStorage();
 }
 
-function loadVideo(event, id) {
+function handleMedia(event, id) {
     let file = event.target.files[0];
     if (!file) return;
+    
     let url = URL.createObjectURL(file);
     let layer = layers.find(l => l.id === id);
-    if (layer.video) layer.video.remove();
-    layer.video = createVideo(url, () => {
-        layer.video.loop();
-        layer.video.volume(0);
-        layer.video.hide();
-    });
+    
+    // Limpiar contenido previo
+    if (layer.content && layer.contentType === 'video') layer.content.remove();
+
+    if (file.type.startsWith('video/')) {
+        layer.contentType = 'video';
+        layer.content = createVideo(url, () => {
+            layer.content.loop();
+            layer.content.volume(0);
+            layer.content.hide();
+        });
+    } else if (file.type.startsWith('image/')) {
+        layer.contentType = 'image';
+        layer.content = loadImage(url);
+    }
 }
 
 function updateParam(id, param, value) {
@@ -79,20 +90,21 @@ function updateParam(id, param, value) {
 }
 
 function removeLayer(id) {
+    let layer = layers.find(l => l.id === id);
+    if (layer.content && layer.contentType === 'video') layer.content.remove();
     layers = layers.filter(l => l.id !== id);
     document.getElementById(`card-${id}`).remove();
     saveToStorage();
 }
 
 function clearProject() {
-    if(confirm("¿Seguro que quieres borrar todas las capas?")) {
+    if(confirm("¿Borrar todo?")) {
         localStorage.removeItem('mapperData');
         location.reload();
     }
 }
 
 function saveToStorage() {
-    // Guardamos solo los datos, no el objeto video
     const dataToSave = layers.map(l => ({
         id: l.id,
         opacity: l.opacity,
@@ -105,34 +117,37 @@ function saveToStorage() {
 function loadSavedData() {
     let saved = localStorage.getItem('mapperData');
     if (saved) {
-        let parsed = JSON.parse(saved);
-        parsed.forEach(data => createLayer(data));
+        JSON.parse(saved).forEach(data => createLayer(data));
     } else {
-        createLayer(); // Crear una capa si está vacío
+        createLayer();
     }
 }
 
 function draw() {
     background(0);
     for (let l of layers) {
+        if (!l.content) continue;
+
         push();
+        // Aplicar Blending
         if (l.blendMode === 'SCREEN') blendMode(SCREEN);
         else if (l.blendMode === 'ADD') blendMode(ADD);
         else if (l.blendMode === 'MULTIPLY') blendMode(MULTIPLY);
         else blendMode(BLEND);
 
-        if (l.video) {
-            noStroke();
-            texture(l.video);
-            tint(255, l.opacity);
-            beginShape();
-            vertex(l.corners[0].x, l.corners[0].y, 0, 0);
-            vertex(l.corners[1].x, l.corners[1].y, l.video.width, 0);
-            vertex(l.corners[2].x, l.corners[2].y, l.video.width, l.video.height);
-            vertex(l.corners[3].x, l.corners[3].y, 0, l.video.height);
-            endShape(CLOSE);
-        }
+        noStroke();
+        texture(l.content);
+        tint(255, l.opacity);
+        
+        // El warping funciona igual para ambos tipos de media
+        beginShape();
+        vertex(l.corners[0].x, l.corners[0].y, 0, 0);
+        vertex(l.corners[1].x, l.corners[1].y, l.content.width, 0);
+        vertex(l.corners[2].x, l.corners[2].y, l.content.width, l.content.height);
+        vertex(l.corners[3].x, l.corners[3].y, 0, l.content.height);
+        endShape(CLOSE);
         pop();
+
         if (showPoints) drawLayerHandles(l);
     }
 }
