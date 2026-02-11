@@ -1,99 +1,15 @@
-let video;
-let corners = [];
-let draggingPoint = null;
-let showPoints = true;
-let canvas;
-
-function setup() {
-    // Creamos un canvas que se ajuste al contenedor
-    let container = document.getElementById('canvas-container');
-    canvas = createCanvas(container.offsetWidth - 40, container.offsetHeight - 40, WEBGL);
-    canvas.parent('canvas-container');
-
-    // Posiciones iniciales (proporcionales al centro)
-    resetGeometry();
-
-    // Eventos de UI
-    document.getElementById('videoInput').addEventListener('change', handleFile);
-    document.getElementById('togglePoints').onclick = () => showPoints = !showPoints;
-    document.getElementById('resetPoints').onclick = resetGeometry;
-    document.getElementById('fullscreenBtn').onclick = () => fullscreen(!fullscreen());
-}
-
-function resetGeometry() {
-    corners = [
-        { x: -250, y: -180 }, // Top-Left
-        { x: 250, y: -180 },  // Top-Right
-        { x: 250, y: 180 },   // Bottom-Right
-        { x: -250, y: 180 }   // Bottom-Left
-    ];
-}
-
-function handleFile(e) {
-    let file = e.target.files[0];
-    if (file) {
-        let url = URL.createObjectURL(file);
-        if (video) video.remove();
-        video = createVideo(url, () => {
-            video.loop();
-            video.volume(0); // Silencio por defecto para evitar bloqueos del navegador
-            video.hide();
-        });
-    }
-}
-
-function draw() {
-    background(0);
-    let op = document.getElementById('opacitySlider').value;
-
-    if (video) {
-        noStroke();
-        texture(video);
-        tint(255, op);
-        
-        // Mapeo de textura a las 4 esquinas
-        beginShape();
-        vertex(corners[0].x, corners[0].y, 0, 0);
-        vertex(corners[1].x, corners[1].y, video.width, 0);
-        vertex(corners[2].x, corners[2].y, video.width, video.height);
-        vertex(corners[3].x, corners[3].y, 0, video.height);
-        endShape(CLOSE);
-    }
-
-    if (showPoints) drawHandles();
-}
-
-function drawHandles() {
-    for (let i = 0; i < corners.length; i++) {
-        stroke(i === draggingPoint ? '#00ffcc' : '#ff0055');
-        strokeWeight(12);
-        point(corners[i].x, corners[i].y);
-    }
-}
-
-function mousePressed() {
-    let mx = mouseX - width / 2;
-    let my = mouseY - height / 2;
-    for (let i = 0; i < corners.length; i++) {
-        if (dist(mx, my, corners[i].x, corners[i].y) < 20) {
-            draggingPoint = i;
-            break;
-        }
-    }
-}
-
-function mouseDragged() {
-    if (draggingPoint !== null) {
-        corners[draggingPoint].x = mouseX - width / 2;
-        corners[draggingPoint].y = mouseY - height / 2;
-    }
-}
-
-function mouseReleased() {
-    draggingPoint = null;
-}
-
-function windowResized() {
-    let container = document.getElementById('canvas-container');
-    resizeCanvas(container.offsetWidth - 40, container.offsetHeight - 40);
-}
+body { margin: 0; background: #080808; color: #eee; font-family: 'Segoe UI', sans-serif; display: flex; overflow: hidden; }
+#ui-panel { width: 340px; height: 100vh; background: #121212; padding: 15px; border-right: 1px solid #333; overflow-y: auto; box-sizing: border-box; }
+h1 { font-size: 1.4rem; color: #00ffcc; margin: 0 0 15px 0; }
+.layer-card { background: #1e1e1e; border: 1px solid #333; padding: 12px; margin-bottom: 15px; border-radius: 8px; border-left: 4px solid #00ffcc; }
+.layer-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.layer-header h3 { margin: 0; font-size: 0.85rem; }
+.control-item { margin-bottom: 8px; }
+label { display: block; font-size: 0.7rem; color: #888; margin-bottom: 3px; }
+select, input[type="file"] { width: 100%; background: #000; color: white; border: 1px solid #444; padding: 4px; font-size: 0.8rem; }
+input[type="range"] { width: 100%; }
+.delete-btn { background: #331111; color: #ff6666; border: 1px solid #552222; padding: 3px 6px; cursor: pointer; font-size: 0.7rem; }
+button { width: 100%; padding: 10px; margin-top: 5px; cursor: pointer; background: #2a2a2a; color: white; border: 1px solid #444; border-radius: 4px; }
+button.primary { background: #00ffcc; color: #000; font-weight: bold; border: none; margin-bottom: 10px; }
+#canvas-container { flex-grow: 1; background: #000; position: relative; }
+.info-text { font-size: 0.7rem; color: #555; margin-top: 20px; }
